@@ -54,7 +54,7 @@ func (gs *GameService) ApplyAction(player string, row int, col int) error {
 	gs.state.Board[row][col] = player
 	log.Printf("Player %s moved to (%d, %d)", player, row, col)
 
-	if gs.checkWin(player) {
+	if gs.checkWin(player, 3) {
 		gs.state.Winner = player
 		log.Printf("Player %s wins!", player)
 		return nil
@@ -74,29 +74,44 @@ func (gs *GameService) ApplyAction(player string, row int, col int) error {
 	return nil
 }
 
-func (gs *GameService) checkWin(player string) bool {
+func (gs *GameService) checkWin(player string, winLength int) bool {
 	b := gs.state.Board
-	for i := 0; i < 3; i++ {
-		if b[i][0] == player && b[i][1] == player && b[i][2] == player {
-			return true
-		}
-		if b[0][i] == player && b[1][i] == player && b[2][i] == player {
-			return true
-		}
+
+	rows := len(b)
+	if rows == 0 {
+		return false
 	}
-	if b[0][0] == player && b[1][1] == player && b[2][2] == player {
-		return true
+	cols := len(b[0])
+
+	directions := [][]int{
+		{0, 1},  // right
+		{1, 0},  // down
+		{1, 1},  // down-right
+		{1, -1}, // down-left
 	}
-	if b[0][2] == player && b[1][1] == player && b[2][0] == player {
-		return true
+
+	for row := 0; row < rows; row++ {
+		for col := 0; col < cols; col++ {
+			if b[row][col] != player {
+				continue
+			}
+			for _, dir := range directions {
+				count := 1
+				for k := 1; k < winLength; k++ {
+					r := row + dir[0]*k
+					c := col + dir[1]*k
+					if r < 0 || r >= rows || c < 0 || c >= cols || b[r][c] != player {
+						break
+					}
+					count++
+				}
+				if count == winLength {
+					return true
+				}
+			}
+		}
 	}
 	return false
-	// for _, pattern := range winPatterns {
-	// 	if game.Board[pattern[0]] != "" && game.Board[pattern[0]] == game.Board[pattern[1]] && game.Board[pattern[1]] == game.Board[pattern[2]] {
-	// 		return game.Board[pattern[0]] // Return winner: "X" or "O"
-	// 	}
-	// }
-	// return ""
 }
 
 func (gs *GameService) isBoardFull() bool {
