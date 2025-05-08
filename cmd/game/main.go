@@ -1,22 +1,222 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
+	"strings"
+	"sync"
 )
+
+type GameState struct {
+	Turn   string       `json:"turn"`
+	Board  [3][3]string `json:"board"`
+	Winner string       `json:"winner,omitempty"`
+	Draw   bool         `json:"draw,omitempty"`
+}
+
+type GameService struct {
+	state *GameState
+	mu    sync.Mutex
+}
+
+func NewGameService() *GameService {
+	return &GameService{
+		state: &GameState{
+			Turn:  "X",
+			Board: [3][3]string{},
+		},
+	}
+}
+
+func (gs *GameService) ApplyAction(player string, row int, col int) error {
+	gs.mu.Lock()
+	defer gs.mu.Unlock()
+
+	if gs.state.Winner != "" || gs.state.Draw {
+		return errors.New("game is over, please reset")
+	}
+
+	if player != gs.state.Turn {
+		log.Printf("Invalid move: it's %s's turn, not %s", gs.state.Turn, player)
+		return errors.New("not your turn")
+	}
+	if row < 0 || row >= 3 || col < 0 || col >= 3 {
+		log.Printf("Invalid move: row=%d, col=%d out of bounds", row, col)
+		return errors.New("invalid position")
+	}
+	if gs.state.Board[row][col] != "" {
+		log.Printf("Invalid move: cell (%d,%d) already occupied", row, col)
+		return errors.New("cell already occupied")
+	}
+
+	gs.state.Board[row][col] = player
+	log.Printf("Player %s moved to (%d, %d)", player, row, col)
+
+	if gs.checkWin(player) {
+		gs.state.Winner = player
+		log.Printf("Player %s wins!", player)
+		return nil
+	}
+
+	if gs.isBoardFull() {
+		gs.state.Draw = true
+		log.Println("Game is a draw!")
+		return nil
+	}
+
+	if player == "X" {
+		gs.state.Turn = "O"
+	} else {
+		gs.state.Turn = "X"
+	}
+	return nil
+}
+
+func (gs *GameService) checkWin(player string) bool {
+	b := gs.state.Board
+	for i := 0; i < 3; i++ {
+		if b[i][0] == player && b[i][1] == player && b[i][2] == player {
+			return true
+		}
+		if b[0][i] == player && b[1][i] == player && b[2][i] == player {
+			return true
+		}
+	}
+	if b[0][0] == player && b[1][1] == player && b[2][2] == player {
+		return true
+	}
+	if b[0][2] == player && b[1][1] == player && b[2][0] == player {
+		return true
+	}
+	return false
+	// for _, pattern := range winPatterns {
+	// 	if game.Board[pattern[0]] != "" && game.Board[pattern[0]] == game.Board[pattern[1]] && game.Board[pattern[1]] == game.Board[pattern[2]] {
+	// 		return game.Board[pattern[0]] // Return winner: "X" or "O"
+	// 	}
+	// }
+	// return ""
+}
+
+func (gs *GameService) isBoardFull() bool {
+	for _, row := range gs.state.Board {
+		for _, cell := range row {
+			if cell == "" {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func (gs *GameService) ResetGame() {
+	gs.mu.Lock()
+	defer gs.mu.Unlock()
+
+	gs.state.Turn = "X"
+	gs.state.Board = [3][3]string{}
+	gs.state.Winner = ""
+	gs.state.Draw = false
+}
+
+type GameHandler struct {
+	service *GameService
+}
+
+func NewGameHandler(service *GameService) *GameHandler {
+	return &GameHandler{service: service}
+}
+
+func (h *GameHandler) respondWithGameState(w http.ResponseWriter, r *http.Request) {
+	enableCORS(w)
+	w.Header().Set("Content-Type", "application/json")
+	err := json.NewEncoder(w).Encode(h.service.state)
+	if err != nil {
+		http.Error(w, "Failed to encode game state", http.StatusInternalServerError)
+	}
+}
+
+type MoveRequest struct {
+	Player string `json:"player"`
+	Row    int    `json:"row"`
+	Col    int    `json:"col"`
+}
+
+func (h *GameHandler) processPlayerAction(w http.ResponseWriter, r *http.Request) {
+	enableCORS(w)
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
+		http.Error(w, "Content-Type must be application/json", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	var move MoveRequest
+	err := json.NewDecoder(r.Body).Decode(&move)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.ApplyAction(move.Player, move.Row, move.Col)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	h.respondWithGameState(w, r)
+}
+
+func (h *GameHandler) resetGame(w http.ResponseWriter, r *http.Request) {
+	enableCORS(w)
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	h.service.ResetGame()
+	h.respondWithGameState(w, r)
+}
+
+func enableCORS(w http.ResponseWriter) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+}
 
 func main() {
 	mux := http.NewServeMux()
-
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static")))) // serve the static files from the static directory
-
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "templates/index.html")
 	})
 
-	log.Println("Server is starting on port 8080...")
+	gameService := NewGameService()
+	gameHandler := NewGameHandler(gameService)
+
+	mux.HandleFunc("/state", gameHandler.respondWithGameState)
+	mux.HandleFunc("/action", gameHandler.processPlayerAction)
+	mux.HandleFunc("/reset", gameHandler.resetGame)
+
+	log.Println("Starting server on port 8080...")
 	err := http.ListenAndServe(":8080", mux)
 	if err != nil {
-		log.Fatal("Error starting server:", err)
+		log.Fatalf("Server failed: %v", err)
 	}
 }
