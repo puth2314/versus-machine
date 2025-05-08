@@ -87,7 +87,7 @@ function renderBoard(board) {
 }
 
 function updateStatus(state) {
-    const statusEl = document.getElementById('status');
+    const statusEl = document.getElementById('game-status');
     if (state.winner) {
         statusEl.textContent = `Player ${state.winner} wins!`;
     } else if (state.draw) {
@@ -154,7 +154,7 @@ function updateUI(state) {
 }
 
 
-const resetButton = document.getElementById('resetBtn');
+const resetButton = document.getElementById('reset-game');
 
 async function resetGame() {
     try {
@@ -166,7 +166,7 @@ async function resetGame() {
 }
 
 function showStatus(message) {
-    const statusEl = document.getElementById('status');
+    const statusEl = document.getElementById('game-status');
     statusEl.textContent = message;
 }
 
