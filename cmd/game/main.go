@@ -147,7 +147,7 @@ func (h *GameHandler) processPlayerAction(w http.ResponseWriter, r *http.Request
 	enableCORS(w)
 
 	if r.Method == http.MethodOptions {
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
@@ -181,7 +181,7 @@ func (h *GameHandler) resetGame(w http.ResponseWriter, r *http.Request) {
 	enableCORS(w)
 
 	if r.Method == http.MethodOptions {
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
