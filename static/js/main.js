@@ -9,12 +9,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function resetGame() {
     fetch('/reset', { method: 'POST' })
-        .then(() => {
-            fetchState();
-        })
-        .catch(() => {
-            showStatusMessage('Failed to reset the game.');
-        });
+    .then(() => {
+        fetchState();
+    })
+    .catch(() => {
+        showStatusMessage('Failed to reset the game.');
+    });
 }
 
 function fetchState() {
@@ -42,9 +42,12 @@ function renderBoard(board) {
     board.forEach((row, rowIndex) => {
         row.forEach((cell, colIndex) => {
             const cellEl = document.createElement('div');
-            cellEl.className = 'cell' + (cell ? ' disabled' : '');
+            cellEl.className = 'w-[100px] h-[100px] bg-gray-100 border border-gray-400 hover:bg-gray-200 flex items-center justify-center cursor-pointer';
+            //    "
             cellEl.textContent = cell;
-            if (!cell) {
+            if (cell) {
+                cellEl.classList.add('cursor-not-allowed', 'pointer-events-none', 'bg-gray-300'); //remove cursor-pointer
+            } else {
                 cellEl.addEventListener('click', () => makeMove(rowIndex, colIndex));
             }
             boardEl.appendChild(cellEl);
@@ -78,20 +81,20 @@ function makeMove(row, col) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ player: currentPlayer, row, col })
         })
-        .then(res => {
+    .then(res => {
         if (!res.ok) {
             return res.text().then(errorText => {
             throw new Error(`Error: ${errorText}`);
             });
         }
         return res.json();
-        })
-        .then(data => {
+    })
+    .then(data => {
         renderBoard(data.board);
         updateStatus(data);
         currentPlayer = data.turn;
-        })
-        .catch(error => {
+    })
+    .catch(error => {
         showStatusMessage(`Move failed: ${error.message}`);
-        });
+    });
   }
