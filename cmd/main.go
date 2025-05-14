@@ -3,11 +3,14 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"html/template"
 	"log"
 	"net/http"
 	"strings"
 	"sync"
+	"time"
+
+	"github.com/a-h/templ"
+	"github.com/puth2314/versus-machine/templates"
 )
 
 type GameState struct {
@@ -219,16 +222,13 @@ func enableCORS(w http.ResponseWriter) {
 func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.ParseFiles("templates/index.html")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		err = tmpl.Execute(w, nil)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+	// mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	// 	templates.GamePage().Render(r.Context(), w)
+	// })
+	mux.Handle("/", templ.Handler(templates.Layout("Home")))
+	mux.HandleFunc("/time", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte("<div>The current time is: " + time.Now().Format(time.RFC1123) + "</div>"))
 	})
 
 	gameService := NewGameService()

@@ -1,0 +1,9 @@
+package templates
+
+templ Home() {
+    <div>
+        <h1>Welcome</h1>
+        <button hx-get="/time" hx-swap="outerHTML">Get Server Time</button>
+        <canvas id="canvas"></canvas>
+    </div>
+}

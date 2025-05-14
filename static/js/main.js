@@ -2,9 +2,15 @@ let currentPlayer = 'X';
 
 // entry point
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('reset-game')
-            .addEventListener('click', resetGame);
-    fetchState();
+    // document.getElementById('reset-game')
+    //         .addEventListener('click', resetGame);
+    // fetchState();
+    // const canvas = document.getElementById("canvas");
+    // const ctx = canvas.getContext("2d");
+
+    // ctx.fillStyle = "green";
+    // ctx.fillRect(10, 10, 150, 100);
+
 });
 
 function resetGame() {
