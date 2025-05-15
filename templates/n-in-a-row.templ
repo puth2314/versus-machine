@@ -1,0 +1,23 @@
+package templates
+
+templ NInARow() {
+    <div id="game-container" class="flex flex-col items-center">
+        <div id="game-name">
+            3 in a Row
+        </div>
+
+        <div id="game-board" class="grid grid-cols-3">
+        </div>
+
+        <div id="game-status">
+        </div>
+
+        <button id="reset-game"
+            class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition focus:ring-10 focus:ring-blue-500">
+            Restart Game
+        </button>
+
+        <canvas id="canvas"></canvas>
+    </div>
+    <script src="/static/js/n-in-a-row.js"></script>
+}

@@ -1,9 +1,18 @@
 package templates
 
 templ Home() {
-    <div>
-        <h1>Welcome</h1>
-        <button hx-get="/time" hx-swap="outerHTML">Get Server Time</button>
-        <canvas id="canvas"></canvas>
+    <div id="home-container">
+        <ul>
+            <li><a 
+                hx-target="#home-container" hx-swap="outerHTML" hx-push-url="true" 
+                hx-get="/">
+                Home
+            </a></li>
+            <li><a 
+                hx-target="#home-container" hx-swap="outerHTML" hx-push-url="true" 
+                hx-get="/n-in-a-row">
+                N in a Row
+            </a></li>
+        </ul>
     </div>
 }

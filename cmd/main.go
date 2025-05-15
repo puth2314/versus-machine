@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/a-h/templ"
 	"github.com/puth2314/versus-machine/templates"
@@ -215,21 +214,16 @@ func (h *GameHandler) resetGame(w http.ResponseWriter, r *http.Request) {
 
 func enableCORS(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 }
 
 func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	// mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-	// 	templates.GamePage().Render(r.Context(), w)
-	// })
-	mux.Handle("/", templ.Handler(templates.Layout("Home")))
-	mux.HandleFunc("/time", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte("<div>The current time is: " + time.Now().Format(time.RFC1123) + "</div>"))
-	})
+
+	mux.Handle("/", htmxHandler("Versus Machine", templates.Home()))
+	mux.Handle("/n-in-a-row", htmxHandler("N in a Row", templates.NInARow()))
 
 	gameService := NewGameService()
 	gameHandler := NewGameHandler(gameService)
@@ -242,5 +236,20 @@ func main() {
 	err := http.ListenAndServe(":8080", mux)
 	if err != nil {
 		log.Fatalf("Server failed: %v", err)
+	}
+}
+
+func htmxHandler(title string, component templ.Component) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var view templ.Component
+		if r.Header.Get("HX-Request") == "true" {
+			view = templates.Fragment(title, component)
+		} else {
+			view = templates.Layout(title, component)
+		}
+		err := view.Render(r.Context(), w)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 }

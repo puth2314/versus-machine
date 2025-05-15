@@ -8,7 +8,7 @@ package templates
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-func GamePage() templ.Component {
+func NInARow() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -29,7 +29,7 @@ func GamePage() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Versus Machine</title><link rel=\"stylesheet\" href=\"/static/css/main.css\"><script src=\"https://unpkg.com/htmx.org\"></script><script src=\"https://cdn.tailwindcss.com\"></script><script type=\"module\" src=\"/static/js/main.js\" defer></script></head><body class=\"h-screen font-sans text-center\"><div id=\"game-container\" class=\"flex flex-col items-center\"><div id=\"game-name\">3 in a Row</div><div id=\"game-board\" class=\"grid grid-cols-3\"></div><div id=\"game-status\"></div><button id=\"reset-game\" class=\"px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition focus:ring-10 focus:ring-blue-500\"><!-- hx-get=\"/reset\" hx-target=\"#board\" hx-swap=\"outerHTML\" -->Restart Game</button></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"game-container\" class=\"flex flex-col items-center\"><div id=\"game-name\">3 in a Row</div><div id=\"game-board\" class=\"grid grid-cols-3\"></div><div id=\"game-status\"></div><button id=\"reset-game\" class=\"px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition focus:ring-10 focus:ring-blue-500\">Restart Game</button><canvas id=\"canvas\"></canvas></div><script src=\"/static/js/n-in-a-row.js\"></script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
